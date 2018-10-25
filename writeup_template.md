@@ -27,17 +27,16 @@ You're reading it! Below I describe how I addressed each rubric point and where 
 ### Explain the Starter Code
 
 #### 1. Explain the functionality of what's provided in `motion_planning.py` and `planning_utils.py`
-These scripts contain a basic planning implementation that includes...
 
-And here's a lovely image of my results (ok this image has nothing to do with it, but it's a nice example of how to include images in your writeup!)
-![Top Down View](./misc/high_up.png)
+##### motion_planning.py
 
-Here's | A | Snappy | Table
---- | --- | --- | ---
-1 | `highlight` | **bold** | 7.41
-2 | a | b | c
-3 | *italic* | text | 403
-4 | 2 | 3 | abcd
+The file `motion_planning.py` provides a subclass of `Drone` with path planning encapsulated into a single method: `MotionPlanning.plan_path`. This method is invoked as part of a planning state, analogous to the landing state, arming state, waypoint state, etc., that we encountered in the backyard flyer project.
+
+The path planning state is entered after the arming state and the manual state are completed, and before takeoff begins. When in the planning state, the drone is responsible for reading the map, identifying its start and end states relative to the map, identify an efficient path through the map, and then convert that path into a set of waypoints in its nevigation frame and store those waypoints for navigation during the waypoint state.
+
+##### planning_utils.py
+
+The file `planning_utils.py` contains files that facilitate the drone's planning phase. Specifically the file contains a `create_grid` function for parsing the provided map, a class of actions to represent the actions that may be performed to traverse the map, and an `a_star` algorithm and associated `heuristic` function for finding a path through the map.
 
 ### Implementing Your Path Planning Algorithm
 

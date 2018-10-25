@@ -119,13 +119,18 @@ class MotionPlanning(Drone):
 
         self.target_position[2] = TARGET_ALTITUDE
 
-        # TODO: read lat0, lon0 from colliders into floating point values
+        # DONE: read lat0, lon0 from colliders into floating point values
+        with open('colliders.csv') as f:
+            lat0, lon0 = [float(coord.strip().split()[1]) for coord in f.readline().split(',')]
         
-        # TODO: set home position to (lon0, lat0, 0)
+        # DONE: set home position to (lon0, lat0, 0)
+        self.set_home_position(lon0, lat0, 0)  # set the current location to be the home position
 
-        # TODO: retrieve current global position
- 
-        # TODO: convert to current local position using global_to_local()
+        # DONE?: retrieve current global position
+        global_position = np.copy(self.global_position)
+
+        # DONE?: convert to current local position using global_to_local()
+        local_position = global_to_local(global_position, self.global_home)
         
         print('global home {0}, position {1}, local position {2}'.format(self.global_home, self.global_position,
                                                                          self.local_position))
@@ -138,21 +143,26 @@ class MotionPlanning(Drone):
         # Define starting point on the grid (this is just grid center)
         grid_start = (-north_offset, -east_offset)
         # TODO: convert start position to current position rather than map center
+        #grid_start = (int(self.local_position[0]) + north_offset, int(self.local_position[1]) + east_offset)
+
+        print("HERE", local_position)
         
         # Set goal as some arbitrary position on the grid
         grid_goal = (-north_offset + 10, -east_offset + 10)
         # TODO: adapt to set goal as latitude / longitude position and convert
 
         # Run A* to find a path from start to goal
-        # TODO: add diagonal motions with a cost of sqrt(2) to your A* implementation
+        # DONE: add diagonal motions with a cost of sqrt(2) to your A* implementation
         # or move to a different search space such as a graph (not done here)
         print('Local Start and Goal: ', grid_start, grid_goal)
         path, _ = a_star(grid, heuristic, grid_start, grid_goal)
         # TODO: prune path to minimize number of waypoints
+
         # TODO (if you're feeling ambitious): Try a different approach altogether!
 
         # Convert path to waypoints
         waypoints = [[p[0] + north_offset, p[1] + east_offset, TARGET_ALTITUDE, 0] for p in path]
+        print(waypoints)
         # Set self.waypoints
         self.waypoints = waypoints
         # TODO: send waypoints to sim (this is just for visualization of waypoints)

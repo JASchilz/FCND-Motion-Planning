@@ -56,6 +56,12 @@ class Action(Enum):
     NORTH = (-1, 0, 1)
     SOUTH = (1, 0, 1)
 
+    NORTHEAST = (-1, 1, 1.4)
+    SOUTHEAST = (1, 1, 1.4)
+    SOUTHWEST = (1, -1, 1.4)
+    NORTHWEST = (-1, -1, 1.4)
+
+
     @property
     def cost(self):
         return self.value[2]
