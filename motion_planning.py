@@ -115,7 +115,7 @@ class MotionPlanning(Drone):
         self.flight_state = States.PLANNING
         print("Searching for a path ...")
         TARGET_ALTITUDE = 5
-        SAFETY_DISTANCE = 5
+        SAFETY_DISTANCE = 7 
 
         self.target_position[2] = TARGET_ALTITUDE
 
@@ -126,12 +126,11 @@ class MotionPlanning(Drone):
         # DONE: set home position to (lon0, lat0, 0)
         self.set_home_position(lon0, lat0, 0)  # set the current location to be the home position
 
-        # DONE?: retrieve current global position
+        # DONE: retrieve current global position
         global_position = np.copy(self.global_position)
 
-        # DONE?: convert to current local position using global_to_local()
+        # DONE: convert to current local position using global_to_local()
         local_position = global_to_local(global_position, self.global_home)
-        print("HERE", local_position, global_position)
         
         print('global home {0}, position {1}, local position {2}'.format(self.global_home, self.global_position,
                                                                          self.local_position))
@@ -143,12 +142,19 @@ class MotionPlanning(Drone):
         print("North offset = {0}, east offset = {1}".format(north_offset, east_offset))
         # Define starting point on the grid (this is just grid center)
         grid_start = (-north_offset, -east_offset)
-        # TODO: convert start position to current position rather than map center
-        #grid_start = (int(self.local_position[0]) + north_offset, int(self.local_position[1]) + east_offset)
+
+        # DONE: convert start position to current position rather than map center
+        grid_start = (-north_offset + int(local_position[0]), -east_offset + int(local_position[1]))
 
         # Set goal as some arbitrary position on the grid
-        grid_goal = (-north_offset + 50, -east_offset + 10)
-        # TODO: adapt to set goal as latitude / longitude position and convert
+        grid_goal = (-north_offset + 250, -east_offset + 120)
+
+        # DONE: adapt to set goal as latitude / longitude position and convert
+        global_goal = (-122.399883, 37.793442, 0)
+
+
+        local_goal = global_to_local(global_goal, self.global_home)
+        grid_goal = (-north_offset + int(local_goal[0]), -east_offset + int(local_goal[1]))
 
         # Run A* to find a path from start to goal
         # DONE: add diagonal motions with a cost of sqrt(2) to your A* implementation
@@ -159,7 +165,7 @@ class MotionPlanning(Drone):
 
         pruned_path = [path[0]]
         for i in range(1, len(path) - 1):
-            if not collinearity_float(path[i - 1], path[i], path[i + 1], epsilon=1):
+            if not collinearity_float(path[i - 1], path[i], path[i + 1], epsilon=.6):
                 pruned_path.append(path[i])
         pruned_path.append(path[-1])
         path = pruned_path

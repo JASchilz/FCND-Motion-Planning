@@ -106,6 +106,14 @@ def valid_actions(grid, current_node):
         valid_actions.remove(Action.WEST)
     if y + 1 > m or grid[x, y + 1] == 1:
         valid_actions.remove(Action.EAST)
+    if (x + 1 > n and y + 1 > m) or grid[x + 1, y + 1] == 1:
+        valid_actions.remove(Action.SOUTHEAST)
+    if (x + 1 > n and y - 1 < 0) or grid[x + 1, y - 1] == 1:
+        valid_actions.remove(Action.SOUTHWEST)
+    if (x - 1 < 0 and y + 1 > m) or grid[x - 1, y + 1] == 1:
+        valid_actions.remove(Action.NORTHEAST)
+    if (x - 1 < 0 and y - 1 < 0) or grid[x - 1, y - 1] == 1:
+        valid_actions.remove(Action.NORTHWEST)
 
     return valid_actions
 
