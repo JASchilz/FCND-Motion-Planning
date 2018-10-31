@@ -41,41 +41,55 @@ The file `planning_utils.py` contains files that facilitate the drone's planning
 ### Implementing Your Path Planning Algorithm
 
 #### 1. Set your global home position
-Here students should read the first line of the csv file, extract lat0 and lon0 as floating point values and use the self.set_home_position() method to set global home. Explain briefly how you accomplished this in your code.
 
+Our home or starting position was included at the top of the `colliders.csv` file as a pair of latitude/longitude coordinates. I:
 
-And here is a lovely picture of our downtown San Francisco environment from above!
-![Map of SF](./misc/map.png)
+  1. Retrieved these coordinates from the file using basic file read operations and string manipulation.
+  2. Set the home position to these coordinates using `self.set_home_position`.
 
 #### 2. Set your current local position
-Here as long as you successfully determine your local position relative to global home you'll be all set. Explain briefly how you accomplished this in your code.
 
-
-Meanwhile, here's a picture of me flying through the trees!
-![Forest Flying](./misc/in_the_trees.png)
+I identified my current local position using global to local, comparing my global_position to my global_home, producing a relative position in NED meters.
 
 #### 3. Set grid start position from local position
-This is another step in adding flexibility to the start location. As long as it works you're good to go!
+
+I was able to use my current local position to determine my current local position in the grid frame. Reading the map produced a set of North, East offsets that I could subtract from my local position to produce my position in the grid with the following code:
+
+```
+  grid_start = (int(local_position[0]) - north_offset, int(local_position[1]) - east_offset)
+
+```
 
 #### 4. Set grid goal position from geodetic coords
-This step is to add flexibility to the desired goal location. Should be able to choose any (lat, lon) within the map and have it rendered to a goal location on the grid.
+
+To produce a set of grid goal coordinates from geodetic coordinates, I:
+
+  1. Choose/defined a set of geodetic coordinate goals.
+  2. Transformed those into NED coordinates relative to my starting position using global_to_local
+  3. Transformed those into grid coordinates by applying the `north_offset` and `east_offset`.
+
 
 #### 5. Modify A* to include diagonal motion (or replace A* altogether)
-Minimal requirement here is to modify the code in planning_utils() to update the A* implementation to include diagonal motions on the grid that have a cost of sqrt(2), but more creative solutions are welcome. Explain the code you used to accomplish this step.
+
+I modified A* to include diagonal motion by:
+
+  1. Adding NORTHEAST, NORTWEST, SOUTHEAST, and SOUTHWEST actions, including the appropriate motion transformations and a cost of 2^(1/2).
+  2. Adding rules to eliminate these new diagonal actions when in cases where they would move the drone into an obstacle or off the grid.
 
 #### 6. Cull waypoints 
-For this step you can use a collinearity test or ray tracing method like Bresenham. The idea is simply to prune your path of unnecessary waypoints. Explain the code you used to accomplish this step.
 
+I culled waypoints using the colinearity approach. Specifically, I retained the initial waypoint, the final waypoint, and tested each waypoint using the area method for colinearity with its neighbors: if the waypoint and its neighbors defined a triangle with area under a given threshold, then I threw pruned the waypoint out.
 
 
 ### Execute the flight
-#### 1. Does it work?
-It works!
 
-### Double check that you've met specifications for each of the [rubric](https://review.udacity.com/#!/rubrics/1534/view) points.
-  
-# Extra Challenges: Real World Planning
 
-For an extra challenge, consider implementing some of the techniques described in the "Real World Planning" lesson. You could try implementing a vehicle model to take dynamic constraints into account, or implement a replanning method to invoke if you get off course or encounter unexpected obstacles.
+Aside from working through outright bugs, my first flights included some glitches: the drone would attempt to cut through the corners of buildings or would produce unnecessarily "zig-zaggy" paths.
 
+To address these issues, I adjusted a couple of parameters:
+
+1. To keep the drone from cutting through the corners of buildings, I adjusted the "safe distance" that a drone should try to keep from a building. Bumping this up from 5 to 7 solved my problems.
+2. To reduce the "zig-zaggyness" of paths, I made path pruning more aggressive. Specifically, I adjusted the `epsilon` value that I used to determine whether three given points were colinear. By allowing an area of up to 0.7 in the triangle of colinear points, I was able to remove a satisfactory number of extra waypoints.
+
+Following these adjustments, I was satisfied with the flight path of the drone.
 
