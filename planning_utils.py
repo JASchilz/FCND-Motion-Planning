@@ -3,6 +3,22 @@ from queue import PriorityQueue
 import numpy as np
 
 
+def collinearity_float(p1, p2, p3, epsilon=1e-2):
+    collinear = False
+
+    matrix = np.vstack((
+        [p1[0], p1[1], 1],
+        [p2[0], p2[1], 1],
+        [p3[0], p3[1], 1],
+    ))
+
+    area = np.linalg.det(matrix)
+
+    if np.abs(area) < epsilon:
+        collinear = True
+
+    return collinear
+
 def create_grid(data, drone_altitude, safety_distance):
     """
     Returns a grid representation of a 2D configuration space

@@ -5,7 +5,7 @@ from enum import Enum, auto
 
 import numpy as np
 
-from planning_utils import a_star, heuristic, create_grid
+from planning_utils import a_star, heuristic, create_grid, collinearity_float
 from udacidrone import Drone
 from udacidrone.connection import MavlinkConnection
 from udacidrone.messaging import MsgID
@@ -131,6 +131,7 @@ class MotionPlanning(Drone):
 
         # DONE?: convert to current local position using global_to_local()
         local_position = global_to_local(global_position, self.global_home)
+        print("HERE", local_position, global_position)
         
         print('global home {0}, position {1}, local position {2}'.format(self.global_home, self.global_position,
                                                                          self.local_position))
@@ -145,10 +146,8 @@ class MotionPlanning(Drone):
         # TODO: convert start position to current position rather than map center
         #grid_start = (int(self.local_position[0]) + north_offset, int(self.local_position[1]) + east_offset)
 
-        print("HERE", local_position)
-        
         # Set goal as some arbitrary position on the grid
-        grid_goal = (-north_offset + 10, -east_offset + 10)
+        grid_goal = (-north_offset + 50, -east_offset + 10)
         # TODO: adapt to set goal as latitude / longitude position and convert
 
         # Run A* to find a path from start to goal
@@ -156,7 +155,14 @@ class MotionPlanning(Drone):
         # or move to a different search space such as a graph (not done here)
         print('Local Start and Goal: ', grid_start, grid_goal)
         path, _ = a_star(grid, heuristic, grid_start, grid_goal)
-        # TODO: prune path to minimize number of waypoints
+        # DONE: prune path to minimize number of waypoints
+
+        pruned_path = [path[0]]
+        for i in range(1, len(path) - 1):
+            if not collinearity_float(path[i - 1], path[i], path[i + 1], epsilon=1):
+                pruned_path.append(path[i])
+        pruned_path.append(path[-1])
+        path = pruned_path
 
         # TODO (if you're feeling ambitious): Try a different approach altogether!
 
