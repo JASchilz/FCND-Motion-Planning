@@ -1,32 +1,10 @@
 ## Project: 3D Motion Planning
-![Quad Image](./misc/enroute.png)
 
----
-
-
-# Required Steps for a Passing Submission:
-1. Load the 2.5D map in the colliders.csv file describing the environment.
-2. Discretize the environment into a grid or graph representation.
-3. Define the start and goal locations.
-4. Perform a search using A* or other search algorithm.
-5. Use a collinearity test or ray tracing method (like Bresenham) to remove unnecessary waypoints.
-6. Return waypoints in local ECEF coordinates (format for `self.all_waypoints` is [N, E, altitude, heading], where the drone’s start location corresponds to [0, 0, 0, 0].
-7. Write it up.
-8. Congratulations!  Your Done!
-
-## [Rubric](https://review.udacity.com/#!/rubrics/1534/view) Points
-### Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
-
----
 ### Writeup / README
 
-#### 1. Provide a Writeup / README that includes all the rubric points and how you addressed each one.  You can submit your writeup as markdown or pdf.  
+### The Starter Code
 
-You're reading it! Below I describe how I addressed each rubric point and where in my code each point is handled.
-
-### Explain the Starter Code
-
-#### 1. Explain the functionality of what's provided in `motion_planning.py` and `planning_utils.py`
+#### 1. The functionality of what's provided in `motion_planning.py` and `planning_utils.py`
 
 ##### motion_planning.py
 
@@ -38,18 +16,30 @@ The path planning state is entered after the arming state and the manual state a
 
 The file `planning_utils.py` contains files that facilitate the drone's planning phase. Specifically the file contains a `create_grid` function for parsing the provided map, a class of actions to represent the actions that may be performed to traverse the map, and an `a_star` algorithm and associated `heuristic` function for finding a path through the map.
 
-### Implementing Your Path Planning Algorithm
+### Implementing My Path Planning Algorithm
 
-#### 1. Set your global home position
+#### 1. Setting my global home position
 
 Our home or starting position was included at the top of the `colliders.csv` file as a pair of latitude/longitude coordinates. I:
 
   1. Retrieved these coordinates from the file using basic file read operations and string manipulation.
   2. Set the home position to these coordinates using `self.set_home_position`.
 
+
+```
+  with open('colliders.csv') as f:
+      lat0, lon0 = [float(coord.strip().split()[1]) for coord in f.readline().split(',')]
+        
+  self.set_home_position(lon0, lat0, 0)  # set the current location to be the home positionp
+```
+
 #### 2. Set your current local position
 
 I identified my current local position using global to local, comparing my global_position to my global_home, producing a relative position in NED meters.
+
+```
+local_position = global_to_local(global_position, self.global_home)
+```
 
 #### 3. Set grid start position from local position
 
@@ -68,6 +58,13 @@ To produce a set of grid goal coordinates from geodetic coordinates, I:
   2. Transformed those into NED coordinates relative to my starting position using global_to_local
   3. Transformed those into grid coordinates by applying the `north_offset` and `east_offset`.
 
+```
+global_goal = (-122.399883, 37.793442, 0)
+
+local_goal = global_to_local(global_goal, self.global_home)
+grid_goal = (-north_offset + int(local_goal[0]), -east_offset + int(local_goal[1]))
+```
+
 
 #### 5. Modify A* to include diagonal motion (or replace A* altogether)
 
@@ -76,9 +73,34 @@ I modified A* to include diagonal motion by:
   1. Adding NORTHEAST, NORTWEST, SOUTHEAST, and SOUTHWEST actions, including the appropriate motion transformations and a cost of 2^(1/2).
   2. Adding rules to eliminate these new diagonal actions when in cases where they would move the drone into an obstacle or off the grid.
 
+```
+NORTHEAST = (-1, 1, 1.4)
+SOUTHEAST = (1, 1, 1.4)
+# ...
+
+if y + 1 > m or grid[x, y + 1] == 1:
+    valid_actions.remove(Action.EAST)
+if (x + 1 > n and y + 1 > m) or grid[x + 1, y + 1] == 1:
+    valid_actions.remove(Action.SOUTHEAST)
+if (x + 1 > n and y - 1 < 0) or grid[x + 1, y - 1] == 1:
+    valid_actions.remove(Action.SOUTHWEST)
+# ...
+```
+
+
 #### 6. Cull waypoints 
 
 I culled waypoints using the colinearity approach. Specifically, I retained the initial waypoint, the final waypoint, and tested each waypoint using the area method for colinearity with its neighbors: if the waypoint and its neighbors defined a triangle with area under a given threshold, then I threw pruned the waypoint out.
+
+```
+pruned_path = [path[0]]
+for i in range(1, len(path) - 1):
+    if not collinearity_float(path[i - 1], path[i], path[i + 1], epsilon=.6):
+	pruned_path.append(path[i])
+pruned_path.append(path[-1])
+path = pruned_path
+```
+
 
 
 ### Execute the flight
